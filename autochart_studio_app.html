@@ -607,6 +607,13 @@ function avgScale(vals){
   return avg>0 ? Math.log10(avg) : 0;
 }
 
+/* 항목(x축) 열로 고른 열의 실제 헤더 이름을 축 제목에 쓰기 위한 헬퍼 */
+function labelColumnName(){
+  const header = state.rawRows && state.rawRows[0];
+  const name = header ? header[state.labelColIdx] : null;
+  return (name===null || name===undefined || name==='') ? '항목' : String(name);
+}
+
 function buildAxisCandidates(){
   const colNames = (state.selectedFields && state.selectedFields.length) ? state.selectedFields : Object.keys(state.numericCols);
   const scales = colNames.map(name=>({name, scale:avgScale(state.numericCols[name])}));
@@ -616,7 +623,7 @@ function buildAxisCandidates(){
   if(scales.length>=1){
     const top = scales[0];
     candidates.push({
-      kind:'category-value', xLabel:'항목', yLabel:top.name, colName:top.name,
+      kind:'category-value', xLabel:labelColumnName(), yLabel:top.name, colName:top.name,
       reason:`'${top.name}' 값 차이가 커서 막대로 비교하기 좋아요`, recommended:true
     });
   }
@@ -634,7 +641,7 @@ function buildAxisCandidates(){
     const second = scales[scales.length>2?1:1];
     if(second && second.name!==scales[0].name && candidates.length<4){
       candidates.push({
-        kind:'category-value', xLabel:'항목', yLabel:second.name, colName:second.name,
+        kind:'category-value', xLabel:labelColumnName(), yLabel:second.name, colName:second.name,
         reason:`'${second.name}' 기준으로 항목별 비교가 필요할 때 적합해요`, recommended:false
       });
     }
@@ -642,7 +649,7 @@ function buildAxisCandidates(){
   if(state.categories.length<=6 && scales.length>=1 && candidates.length<4){
     const top = scales[0];
     candidates.push({
-      kind:'category-value', xLabel:'항목', yLabel:top.name+' 비중', colName:top.name,
+      kind:'category-value', xLabel:labelColumnName(), yLabel:top.name+' 비중', colName:top.name,
       reason:`항목이 ${state.categories.length}개뿐이라 전체 대비 비중을 보기에도 좋아요`, recommended:false, pieHint:true
     });
   }
@@ -784,16 +791,16 @@ document.getElementById('typeNext').addEventListener('click', ()=>{
 
 /* ---------- 4. 색감 테마 ---------- */
 const MONO_THEMES = [
-  {id:'blue', name:'클래식 블루', colors:['#378ADD','#85B7EB','#0C447C','#B5D4F4']},
-  {id:'coral', name:'웜 코랄', colors:['#D85A30','#F0997B','#993C1D','#F5C4B3']},
-  {id:'teal', name:'딥 틸', colors:['#0F6E56','#5DCAA5','#04342C','#9FE1CB']},
-  {id:'purple', name:'라벤더 퍼플', colors:['#7F77DD','#AFA9EC','#3C3489','#CECBF6']}
+  {id:'blue', name:'클래식 블루', colors:['#378ADD','#85B7EB','#0C447C','#B5D4F4','#1D63AA','#D6E8FA']},
+  {id:'coral', name:'웜 코랄', colors:['#D85A30','#F0997B','#993C1D','#F5C4B3','#B84623','#FCE0D3']},
+  {id:'teal', name:'딥 틸', colors:['#0F6E56','#5DCAA5','#04342C','#9FE1CB','#0A5142','#D2F3E7']},
+  {id:'purple', name:'라벤더 퍼플', colors:['#7F77DD','#AFA9EC','#3C3489','#CECBF6','#5850AD','#E7E5FB']}
 ];
 const MULTI_THEMES = [
-  {id:'vivid', name:'비비드 클래식', colors:['#378ADD','#D85A30','#EF9F27','#1D9E75']},
-  {id:'sunset', name:'선셋 팔레트', colors:['#D85A30','#D4537E','#EF9F27','#7F77DD']},
-  {id:'forest', name:'포레스트 & 어스', colors:['#639922','#1D9E75','#BA7517','#888780']},
-  {id:'contrast', name:'대비 강조', colors:['#7F77DD','#D85A30','#639922','#5F5E5A']}
+  {id:'vivid', name:'비비드 클래식', colors:['#378ADD','#D85A30','#EF9F27','#1D9E75','#7F77DD','#D4537E']},
+  {id:'sunset', name:'선셋 팔레트', colors:['#D85A30','#D4537E','#EF9F27','#7F77DD','#993C1D','#F5C24D']},
+  {id:'forest', name:'포레스트 & 어스', colors:['#639922','#1D9E75','#BA7517','#888780','#2F5D50','#C9A227']},
+  {id:'contrast', name:'대비 강조', colors:['#7F77DD','#D85A30','#639922','#5F5E5A','#1D9E75','#D4537E']}
 ];
 
 /* 항목 개수가 테마 기본 색상 수보다 많아도 항목마다 다른 색을 쓰도록 확장 팔레트 생성 */
@@ -881,13 +888,17 @@ function chartJsTypeAndData(){
   }
   const isHorizontal = t==='bar-h';
   const valueAxis = isHorizontal ? 'x' : 'y';
+  const categoryAxis = isHorizontal ? 'y' : 'x';
   return {
     type: t==='line' ? 'line' : 'bar',
     data:{ labels:cats, datasets:[{ label:a.colName, data:vals, backgroundColor:palette, borderColor:colors[0] }] },
     options:{
       indexAxis: isHorizontal?'y':'x',
       plugins:{legend:{display:false}},
-      scales:{ [valueAxis]:{ beginAtZero:true, grace:'20%' } }
+      scales:{
+        [valueAxis]:{ beginAtZero:true, grace:'20%', title:{display:true, text:a.yLabel} },
+        [categoryAxis]:{ title:{display:true, text:a.xLabel} }
+      }
     }
   };
 }
