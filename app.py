@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 # 이미지 등 모든 리소스가 base64로 내장된 단일 HTML 파일을 그대로 불러와 렌더링합니다.
-HTML_PATH = pathlib.Path(__file__).parent / "autochart_studio.html"
+HTML_PATH = pathlib.Path(__file__).parent / "autochart_studio_app.html"
 html_code = HTML_PATH.read_text(encoding="utf-8")
 
 # 화면이 길어질 수 있으므로 넉넉한 높이 + 스크롤 허용
