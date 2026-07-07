@@ -518,6 +518,32 @@ function deriveFromRawRows(labelColIdx){
   return true;
 }
 
+/*
+ * 항목(x축) 열을 항상 첫 번째 열로 고정하면, 이 열의 값이 전부 같을 때
+ * (예: "구미시" 데이터만 모아둔 파일의 "시도명" 열이 전부 "경상북도") 그래프의
+ * x축이 전부 같은 값으로 찍히는 문제가 생긴다. 그래서 열마다 고유값 개수를 세어
+ * 텍스트(범주형) 열 중 고유값이 가장 많은 열을 기본 항목 열로 자동 선택한다.
+ */
+function pickBestLabelColIdx(rows){
+  const header = rows[0];
+  let bestIdx = 0, bestCount = -1, bestIsText = false;
+  for(let c=0; c<header.length; c++){
+    const seen = new Set();
+    let allNumeric = true;
+    for(let i=1;i<rows.length;i++){
+      const v = rows[i] ? rows[i][c] : null;
+      if(v===null || v===undefined || v==='') continue;
+      seen.add(String(v));
+      if(allNumeric && !isNumeric(v)) allNumeric = false;
+    }
+    if(seen.size <= 1) continue;
+    const isText = !allNumeric;
+    const better = bestCount===-1 || (isText && !bestIsText) || (isText===bestIsText && seen.size > bestCount);
+    if(better){ bestIdx = c; bestCount = seen.size; bestIsText = isText; }
+  }
+  return bestCount===-1 ? 0 : bestIdx;
+}
+
 function analyzeRows(rows, fileName, sheetName){
   if(!rows || rows.length < 2){
     document.getElementById('uploadError').textContent = '표 형태의 데이터를 찾지 못했어요.';
@@ -525,7 +551,7 @@ function analyzeRows(rows, fileName, sheetName){
   }
   state.rawRows = rows;
   state.fileName = fileName; state.sheetName = sheetName;
-  if(!deriveFromRawRows(0)) return;
+  if(!deriveFromRawRows(pickBestLabelColIdx(rows))) return;
 
   renderLabelColOptions();
   renderFileInfo();
