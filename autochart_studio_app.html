@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오토차트 스튜디오</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F7F3; --paper:#FFFFFF; --ink:#141814; --muted:#6B6F68; --line:#DEE1D8;
+    --accent:#2F5D50; --accent-ink:#173A31; --accent-tint:#E4EEEA; --coral:#E2572B;
+    --radius:14px;
+    --font-body:'Noto Sans KR',-apple-system,'Malgun Gothic',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.7;}
+  .mono{font-family:'Consolas',monospace;}
+  .wrap{max-width:960px;margin:0 auto;padding:24px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .logo-box{width:40px;height:40px;flex:none;border:3px solid #141814;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .logo-mark{width:32px;height:32px;flex:none;}
+
+  .hero{margin:8px 0 28px;}
+  .hero-brand{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 12px;}
+  .hero-title{font-weight:800;font-size:30px;letter-spacing:-0.01em;}
+  .hero-tagline{color:var(--muted);font-size:15.5px;margin:0 auto;max-width:520px;text-align:center;}
+  .hero-people-caption{text-align:center;color:var(--ink);font-weight:600;font-size:16px;margin:14px 0 0;}
+
+  .hero-row{display:flex;align-items:stretch;justify-content:center;gap:20px;margin:24px 0 0;flex-wrap:wrap;}
+
+  .hero-people-box{
+    display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);
+    border-radius:12px;padding:14px;flex:none;
+  }
+  .hero-people-box img{width:170px;height:auto;display:block;}
+
+  .hero-arrow{flex:none;align-self:center;}
+
+  .hero-meeting-box{
+    background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px;flex:none;
+    display:flex;align-items:center;
+  }
+  .hero-meeting-box img{width:180px;height:auto;display:block;border-radius:6px;}
+
+  .hero-illustration{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px 26px;
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);text-align:center;flex:none;
+  }
+  .hero-illustration .hi-icons{display:flex;align-items:center;gap:18px;}
+  .hero-illustration .hi-table{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:62px;height:52px;flex:none;}
+  .hero-illustration .hi-table span{background:var(--accent-tint);border:1px solid var(--line);border-radius:2px;}
+  .hero-illustration .hi-table span:first-child{background:var(--accent);border-color:var(--accent);}
+  .hero-illustration .hi-arrow{flex:none;stroke:var(--muted);}
+  .hero-illustration .hi-chart{display:flex;align-items:end;gap:6px;width:64px;height:52px;flex:none;}
+  .hero-illustration .hi-chart .b{flex:1;border-radius:3px 3px 0 0;}
+  .hero-illustration .hi-text{font-size:16px;color:var(--muted);}
+  .hero-illustration .hi-text b{color:var(--ink);font-weight:700;}
+
+  .featurerow{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0 0 28px;}
+  .feature{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 16px;text-align:center;}
+  .feature .f-icon{width:38px;height:38px;border-radius:10px;background:var(--accent-tint);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;}
+  .feature .f-icon svg{width:18px;height:18px;stroke:var(--accent);}
+  .feature h4{font-size:14px;font-weight:700;margin:0 0 4px;}
+  .feature p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.5;}
+
+  footer.sitefoot{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);text-align:center;font-size:12.5px;color:var(--muted);}
+
+  .stepbar{display:flex;gap:6px;margin-bottom:28px;font-size:13px;color:var(--muted);flex-wrap:wrap;}
+  .stepbar .s{padding:4px 10px;border-radius:100px;background:var(--paper);border:1px solid var(--line);}
+  .stepbar .s.on{background:var(--accent-tint);color:var(--accent-ink);border-color:var(--accent);font-weight:600;}
+  h1.pagetitle{font-size:26px;font-weight:800;margin:0 0 8px;letter-spacing:-0.01em;}
+  p.pagesub{color:var(--muted);font-size:15px;margin:0 0 22px;}
+
+  .dropzone{
+    border:1.5px dashed var(--line);border-radius:var(--radius);background:var(--paper);
+    padding:48px 24px;text-align:center;cursor:pointer;transition:.15s;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--accent);background:var(--accent-tint);}
+  .dropzone .dz-icon{width:46px;height:46px;border-radius:12px;background:var(--accent-tint);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;position:relative;}
+  .dropzone .dz-icon svg{width:22px;height:22px;stroke:var(--accent);}
+  .dropzone .dz-icon .xl-badge{
+    position:absolute;bottom:-6px;right:-6px;width:22px;height:22px;border-radius:6px;
+    background:#185C37;color:#fff;font-size:11px;font-weight:800;font-family:var(--font-body);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--paper);
+  }
+  .dropzone p.main{margin:0 0 4px;font-weight:600;font-size:15px;}
+  .dropzone p.sec{margin:0;color:var(--muted);font-size:14px;}
+  input[type=file]{display:none;}
+
+  .sample-cta{margin:14px 0 0;font-size:13.5px;color:var(--muted);text-align:center;}
+
+  .format-examples{margin:14px 0 0;color:var(--muted);font-size:13px;text-align:center;}
+  .link-btn{background:none;border:none;padding:0;margin:0;color:var(--accent-ink);font-weight:700;font-size:13.5px;cursor:pointer;text-decoration:underline;font-family:inherit;}
+  .link-btn:hover{color:var(--accent);}
+
+  .filepill{
+    display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);
+    border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:14px;color:var(--muted);
+  }
+  .filepill b{color:var(--ink);font-weight:600;}
+
+  .fieldcard .check{
+    position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:5px;
+    border:1.5px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:12px;color:transparent;
+  }
+  .fieldcard.picked .check{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  .cardgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    cursor:pointer;position:relative;transition:.12s;
+  }
+  .card:hover{border-color:var(--accent);}
+  .card.picked{border:2px solid var(--accent);background:var(--accent-tint);}
+  .card .badge{
+    position:absolute;top:-9px;left:14px;background:var(--coral);color:#fff;font-size:12px;
+    padding:2px 9px;border-radius:100px;font-weight:600;
+  }
+  .card .prev{display:flex;align-items:end;gap:5px;height:48px;margin-bottom:10px;}
+  .card .prev .b{width:14%;border-radius:3px 3px 0 0;background:var(--accent);}
+  .card h3{font-size:15px;font-weight:700;margin:0 0 3px;}
+  .card p{font-size:13px;color:var(--muted);margin:0;}
+  .swrow{display:flex;gap:5px;margin-bottom:10px;}
+  .sw{width:15px;height:15px;border-radius:4px;}
+  .grouplabel{font-size:14px;font-weight:700;color:var(--muted);margin:20px 0 10px;}
+
+  .btnrow{display:flex;justify-content:space-between;margin-top:26px;}
+  button{font-family:inherit;}
+  .btn{
+    border:1px solid var(--line);background:var(--paper);color:var(--ink);
+    padding:10px 18px;border-radius:10px;font-size:15px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  }
+  .btn.primary{background:var(--ink);color:#fff;border:none;}
+  .btn.primary:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+  .btn:hover:not(:disabled){border-color:var(--accent);}
+
+  .resultgrid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:24px;}
+  .chartbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .downloads{display:flex;flex-direction:column;gap:12px;}
+  .dl-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .dl-card h3{font-size:15px;font-weight:700;margin:0 0 4px;}
+  .dl-card p{font-size:13.5px;color:var(--muted);margin:0 0 12px;}
+  .dl-card .btn{width:100%;text-align:center;}
+
+  @media (max-width:960px){
+    .cardgrid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:700px){
+    .resultgrid{grid-template-columns:1fr;}
+    .cardgrid{grid-template-columns:1fr;}
+    .featurerow{grid-template-columns:1fr;}
+    .hero-row{flex-direction:column;align-items:center;justify-content:center;}
+    .hero-people-box img{width:110px;}
+    .hero-arrow{transform:rotate(90deg);}
+    .hero-meeting-box img{width:140px;}
+    body{font-size:17px;}
+    h1.pagetitle{font-size:22px;}
+    p.pagesub{font-size:15px;}
+    .card h3{font-size:16px;}
+    .card p, .dl-card p, .feature p{font-size:14px;}
+    .stepbar .s{font-size:13px;}
+    .btn{font-size:16px;padding:12px 18px;min-height:48px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="hero-brand">
+      <span class="logo-box">
+        <svg class="logo-mark" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#2F5D50"/>
+          <rect x="9.5" y="6" width="5" height="16" rx="1.5" fill="#E2572B"/>
+          <rect x="17" y="2" width="5" height="20" rx="1.5" fill="#8A8381"/>
+        </svg>
+      </span>
+      <span class="hero-title">오토차트 스튜디오</span>
+    </div>
+    <p class="hero-tagline">엑셀 표를 몇 번의 클릭으로, 발표에 바로 쓰는 그래프로 바꿔드려요.<br>직장에서도 학교에서도, 누구나 쉽게 씁니다.</p>
+
+    <div class="hero-row">
+      <div class="hero-people-box">
+        <img src="assets/office-worker.jpg" alt="노트북으로 작업하는 직장인">
+      </div>
+      <svg class="hero-arrow" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#141814" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M13 5l7 7-7 7"/></svg>
+      <div class="hero-meeting-box">
+        <img src="assets/presentation-meeting.png" alt="발표 자료의 그래프를 보며 회의하는 사람들">
+      </div>
+      <div class="hero-illustration">
+        <div class="hi-icons">
+          <div class="hi-table">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+          <svg class="hi-arrow" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M13 5l7 7-7 7"/></svg>
+          <div class="hi-chart">
+            <div class="b" style="height:45%;background:#2F5D50;"></div>
+            <div class="b" style="height:80%;background:#E2572B;"></div>
+            <div class="b" style="height:65%;background:#8A8381;"></div>
+          </div>
+        </div>
+        <span class="hi-text">엑셀 <b>표</b>를 올리면 몇 초 만에 <b>그래프</b>로 바꿔드려요</span>
+      </div>
+    </div>
+    <p class="hero-people-caption">직장인도 — 오토차트 스튜디오라면 누구나 쉽게 발표용 그래프를 완성해요</p>
+  </section>
+
+  <div class="stepbar">
+    <span class="s" data-step="upload">1. 업로드</span>
+    <span class="s" data-step="sheet">2. 시트 선택</span>
+    <span class="s" data-step="fields">3. 데이터 선택</span>
+    <span class="s" data-step="axis">4. 축 추천</span>
+    <span class="s" data-step="type">5. 그래프 종류</span>
+    <span class="s" data-step="theme">6. 색감 테마</span>
+    <span class="s" data-step="final">7. 완성</span>
+  </div>
+
+  <!-- SCREEN 1: UPLOAD -->
+  <section class="screen active" id="screen-upload">
+    <h1 class="pagetitle">엑셀 파일을 업로드하세요</h1>
+    <p class="pagesub">표 형태(첫 행 헤더, 첫 열 항목명)의 .xlsx 파일이면 바로 분석할 수 있어요.</p>
+    <div class="dropzone" id="dropzone">
+      <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13H6z"/></svg><span class="xl-badge">X</span></div>
+      <p class="main">여기로 파일을 끌어놓거나 클릭해서 선택하세요</p>
+      <p class="sec">지원 형식 .xlsx · .xls · .csv</p>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <p id="uploadError" style="color:var(--coral);font-size:13px;margin-top:10px;"></p>
+    <p class="sample-cta">파일이 없다면 <button type="button" id="useSample" class="link-btn">샘플 데이터로 체험해보기</button> · <button type="button" id="dlSampleCsv" class="link-btn">샘플 CSV 다운로드</button></p>
+
+    <p class="format-examples">표 한 장짜리 파일 — 첫 행은 헤더, 첫 열은 항목명 (예: 월별 매출표)</p>
+
+    <div class="featurerow">
+      <div class="feature">
+        <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></div>
+        <h4>안전한 처리</h4>
+        <p>파일은 브라우저 안에서만 처리되고 서버로 전송되지 않아요</p>
+      </div>
+      <div class="feature">
+        <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+        <h4>몇 초면 완성</h4>
+        <p>업로드부터 그래프 완성까지 클릭 몇 번이면 충분해요</p>
+      </div>
+      <div class="feature">
+        <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13H6z"/><path d="M9 15l2-2 2 2 3-3"/></svg></div>
+        <h4>PPT로 바로 편집</h4>
+        <p>다운로드한 PPT는 파워포인트에서 숫자까지 수정할 수 있어요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: SHEET SELECTION (only shown when the file has multiple sheets) -->
+  <section class="screen" id="screen-sheet">
+    <h1 class="pagetitle">분석할 시트를 선택하세요</h1>
+    <p class="pagesub">파일에 시트가 여러 개 있어요. 레일·회차처럼 나뉜 시트 중 그래프로 만들 시트 하나를 골라주세요.</p>
+    <div class="cardgrid" id="sheetCards"></div>
+    <div class="btnrow"><button class="btn" id="sheetBack">이전</button><button class="btn primary" id="sheetNext" disabled>다음</button></div>
+  </section>
+
+  <!-- SCREEN 3: DATA FIELD SELECTION -->
+  <section class="screen" id="screen-fields">
+    <h1 class="pagetitle">그래프에 사용할 항목을 선택하세요</h1>
+    <p class="pagesub">숫자로 인식된 컬럼 중 그래프에 쓰고 싶은 항목만 골라보세요. 기본으로 모두 선택돼 있어요.</p>
+    <div class="filepill" id="fileInfoPill"></div>
+    <div class="cardgrid" id="fieldCards"></div>
+    <div class="btnrow"><button class="btn" id="fieldsBack">이전</button><button class="btn primary" id="fieldsNext" disabled>다음</button></div>
+  </section>
+
+  <!-- SCREEN 3: AXIS RECOMMENDATION -->
+  <section class="screen" id="screen-axis">
+    <h1 class="pagetitle">이런 축 조합으로 그리면 효과적일 것 같아요</h1>
+    <div class="cardgrid" id="axisCards"></div>
+    <div class="btnrow"><button class="btn" id="axisBack">이전</button><button class="btn primary" id="axisNext" disabled>다음</button></div>
+  </section>
+
+  <!-- SCREEN 3: CHART TYPE -->
+  <section class="screen" id="screen-type">
+    <h1 class="pagetitle">그래프 종류를 확인하세요</h1>
+    <p class="pagesub" id="typeSub"></p>
+    <div class="cardgrid" id="typeCards"></div>
+    <div class="btnrow"><button class="btn" id="typeBack">이전</button><button class="btn primary" id="typeNext" disabled>다음</button></div>
+  </section>
+
+  <!-- SCREEN 4: THEME -->
+  <section class="screen" id="screen-theme">
+    <h1 class="pagetitle">색감 테마를 선택하세요</h1>
+    <div class="grouplabel">단색 계열 — 톤 위주로 차분하게</div>
+    <div class="cardgrid" id="monoThemeCards"></div>
+    <div class="grouplabel">멀티컬러 조합 — 서로 다른 색으로 구분감 있게</div>
+    <div class="cardgrid" id="multiThemeCards"></div>
+    <div class="btnrow"><button class="btn" id="themeBack">이전</button><button class="btn primary" id="themeNext" disabled>완성하기</button></div>
+  </section>
+
+  <!-- SCREEN 5: FINAL -->
+  <section class="screen" id="screen-final">
+    <h1 class="pagetitle">완성됐어요</h1>
+    <p class="pagesub">그래프 이미지를 확인하고, 편집 가능한 PPT로 내려받으세요.</p>
+    <div class="resultgrid">
+      <div class="chartbox"><canvas id="finalChart"></canvas></div>
+      <div class="downloads">
+        <div class="dl-card">
+          <h3>그래프 이미지 (PNG)</h3>
+          <p>보고서나 문서에 바로 붙여넣을 수 있어요.</p>
+          <button class="btn" id="dlPng">이미지 다운로드</button>
+        </div>
+        <div class="dl-card">
+          <h3>편집 가능한 PPT</h3>
+          <p>PowerPoint에서 더블클릭하면 숫자를 직접 수정할 수 있어요.</p>
+          <button class="btn primary" id="dlPptx">PPT 다운로드</button>
+        </div>
+      </div>
+    </div>
+    <div class="btnrow"><button class="btn" id="finalRestart">새 파일로 다시 시작</button><div></div></div>
+  </section>
+
+  <footer class="sitefoot">© 2026 오토차트 스튜디오 · 업로드한 데이터는 서버에 저장되지 않아요</footer>
+</div>
+
+<script>
+/* ---------- 상태 ---------- */
+const state = {
+  workbook:null, fileName:'', sheetName:'', selectedSheet:'',
+  categories:[], numericCols:{}, skippedCols:[], selectedFields:[],
+  axisCandidates:[], selectedAxis:null,
+  typeCandidates:[], selectedType:null,
+  selectedTheme:null,
+  chart:null
+};
+const TOTAL_KEYWORDS = ['합계','총계','총합계','소계','total','sum'];
+const isTotalRow = (label) => TOTAL_KEYWORDS.some(k => String(label).toLowerCase().includes(k));
+const isNumeric = (v) => typeof v === 'number' && !isNaN(v);
+
+/* ---------- 화면 전환 ---------- */
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.stepbar .s').forEach(s=>s.classList.remove('on'));
+  const order=['upload','sheet','fields','axis','type','theme','final'];
+  const idx=order.indexOf(id);
+  order.forEach((o,i)=>{ if(i<=idx) document.querySelector(`.stepbar .s[data-step="${o}"]`).classList.add('on'); });
+}
+
+/* ---------- 1. 업로드 & 파싱 ---------- */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+dropzone.addEventListener('click', ()=>fileInput.click());
+['dragover','dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>e.preventDefault()));
+dropzone.addEventListener('dragover', ()=>dropzone.classList.add('drag'));
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  dropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{
+  if(e.target.files.length) handleFile(e.target.files[0]);
+});
+
+const SAMPLE_ROWS = [
+  ['항목','필드1','필드2','필드3'],
+  ['1월',120,85,60],
+  ['2월',135,90,72],
+  ['3월',150,95,80],
+  ['4월',142,88,75],
+  ['5월',160,102,90],
+  ['6월',175,110,95]
+];
+document.getElementById('useSample').addEventListener('click', ()=>{
+  document.getElementById('uploadError').textContent = '';
+  analyzeRows(SAMPLE_ROWS, '오토차트_샘플데이터.csv', '샘플 시트');
+});
+
+document.getElementById('dlSampleCsv').addEventListener('click', ()=>{
+  const csvText = SAMPLE_ROWS.map(row => row.join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csvText], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = '오토차트_샘플데이터.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+function decodeCsvBytes(bytes){
+  if(bytes.length>=2 && bytes[0]===0xFF && bytes[1]===0xFE){
+    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+  }
+  if(bytes.length>=2 && bytes[0]===0xFE && bytes[1]===0xFF){
+    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+  }
+  let start = 0;
+  if(bytes.length>=3 && bytes[0]===0xEF && bytes[1]===0xBB && bytes[2]===0xBF) start = 3;
+  const view = bytes.subarray(start);
+  try{
+    return new TextDecoder('utf-8', {fatal:true}).decode(view);
+  }catch(e){
+    return new TextDecoder('euc-kr').decode(view);
+  }
+}
+
+function handleFile(file){
+  const errEl = document.getElementById('uploadError');
+  errEl.textContent = '';
+  const isCsv = /\.csv$/i.test(file.name);
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = isCsv
+        ? XLSX.read(decodeCsvBytes(data), {type:'string'})
+        : XLSX.read(data, {type:'array'});
+      state.workbook = wb;
+      state.fileName = file.name;
+      if(wb.SheetNames.length > 1){
+        renderSheetCards(wb.SheetNames);
+        goScreen('sheet');
+      } else {
+        loadSheet(wb.SheetNames[0]);
+      }
+    }catch(err){
+      errEl.textContent = '파일을 읽는 중 문제가 발생했어요: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSheet(sheetName){
+  const ws = state.workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+  analyzeRows(rows, state.fileName, sheetName);
+}
+
+function renderSheetCards(sheetNames){
+  const wrap = document.getElementById('sheetCards');
+  wrap.innerHTML = '';
+  sheetNames.forEach(name=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `<h3>${name}</h3><p>이 시트의 표로 그래프를 만들어요</p>`;
+    div.addEventListener('click', ()=>{
+      wrap.querySelectorAll('.card').forEach(el=>el.classList.remove('picked'));
+      div.classList.add('picked');
+      state.selectedSheet = name;
+      document.getElementById('sheetNext').disabled = false;
+    });
+    wrap.appendChild(div);
+  });
+}
+document.getElementById('sheetBack').addEventListener('click', ()=>goScreen('upload'));
+document.getElementById('sheetNext').addEventListener('click', ()=>{
+  loadSheet(state.selectedSheet);
+});
+
+function analyzeRows(rows, fileName, sheetName){
+  if(!rows || rows.length < 2){
+    document.getElementById('uploadError').textContent = '표 형태의 데이터를 찾지 못했어요.';
+    return;
+  }
+  const header = rows[0];
+  const colNames = header.slice(1).map(h=>h===null?'':String(h)).filter(h=>h!=='');
+  const categories = [];
+  const rawByCol = {}; colNames.forEach(c=>rawByCol[c]=[]);
+
+  for(let i=1;i<rows.length;i++){
+    const row = rows[i];
+    if(!row || row[0]===null || row[0]===undefined || row[0]==='') break;
+    const label = String(row[0]);
+    if(isTotalRow(label)) continue;
+    categories.push(label);
+    colNames.forEach((name, idx)=>{ rawByCol[name].push(row[idx+1]); });
+  }
+
+  const numericCols = {}; const skippedCols = [];
+  colNames.forEach(name=>{
+    const vals = rawByCol[name];
+    const allNumeric = vals.every(v => v===null || v===undefined || isNumeric(v));
+    if(allNumeric){ numericCols[name] = vals.map(v=> (v===null||v===undefined) ? 0 : v); }
+    else skippedCols.push(name);
+  });
+
+  if(categories.length===0 || Object.keys(numericCols).length===0){
+    document.getElementById('uploadError').textContent = '숫자 컬럼이나 항목을 찾지 못했어요. 표 구조를 확인해주세요.';
+    return;
+  }
+
+  state.fileName = fileName; state.sheetName = sheetName;
+  state.categories = categories; state.numericCols = numericCols; state.skippedCols = skippedCols;
+  state.selectedFields = Object.keys(numericCols);
+
+  renderFileInfo();
+  renderFieldCards();
+  goScreen('fields');
+}
+
+/* ---------- 2. 축 추천 로직 ---------- */
+function avgScale(vals){
+  const nz = vals.filter(v=>v).map(Math.abs);
+  if(nz.length===0) return 0;
+  const avg = nz.reduce((a,b)=>a+b,0)/nz.length;
+  return avg>0 ? Math.log10(avg) : 0;
+}
+
+function buildAxisCandidates(){
+  const colNames = (state.selectedFields && state.selectedFields.length) ? state.selectedFields : Object.keys(state.numericCols);
+  const scales = colNames.map(name=>({name, scale:avgScale(state.numericCols[name])}));
+  scales.sort((a,b)=>b.scale-a.scale);
+
+  const candidates = [];
+  if(scales.length>=1){
+    const top = scales[0];
+    candidates.push({
+      kind:'category-value', xLabel:'항목', yLabel:top.name, colName:top.name,
+      reason:`'${top.name}' 값 차이가 커서 막대로 비교하기 좋아요`, recommended:true
+    });
+  }
+  if(scales.length>=2){
+    const a = scales[0], b = scales[scales.length-1];
+    if(a.name!==b.name){
+      candidates.push({
+        kind:'numeric-numeric', xLabel:b.name, yLabel:a.name,
+        xCol:b.name, yCol:a.name,
+        reason:`'${b.name}'과 '${a.name}'의 관계를 보려면 분산형이 적합해요`, recommended:false
+      });
+    }
+  }
+  if(scales.length>=2){
+    const second = scales[scales.length>2?1:1];
+    if(second && second.name!==scales[0].name && candidates.length<4){
+      candidates.push({
+        kind:'category-value', xLabel:'항목', yLabel:second.name, colName:second.name,
+        reason:`'${second.name}' 기준으로 항목별 비교가 필요할 때 적합해요`, recommended:false
+      });
+    }
+  }
+  if(state.categories.length<=6 && scales.length>=1 && candidates.length<4){
+    const top = scales[0];
+    candidates.push({
+      kind:'category-value', xLabel:'항목', yLabel:top.name+' 비중', colName:top.name,
+      reason:`항목이 ${state.categories.length}개뿐이라 전체 대비 비중을 보기에도 좋아요`, recommended:false, pieHint:true
+    });
+  }
+  state.axisCandidates = candidates.slice(0,4);
+}
+
+function renderFileInfo(){
+  const numCount = Object.keys(state.numericCols).length;
+  document.getElementById('fileInfoPill').innerHTML =
+    `<span>📄</span> <b>${state.fileName}</b> · 시트 "${state.sheetName}" · 숫자 컬럼 ${numCount}개 인식` +
+    (state.skippedCols.length? ` · 텍스트 컬럼 제외: ${state.skippedCols.join(', ')}`:'');
+}
+
+function renderFieldCards(){
+  const wrap = document.getElementById('fieldCards');
+  wrap.innerHTML = '';
+  Object.keys(state.numericCols).forEach(name=>{
+    const div = document.createElement('div');
+    div.className = 'card fieldcard picked';
+    div.innerHTML = `
+      <span class="check">✓</span>
+      <div class="prev">${previewFieldBars(name)}</div>
+      <h3>${name}</h3>
+      <p>항목 ${state.categories.length}개의 숫자 데이터</p>`;
+    div.addEventListener('click', ()=>{
+      div.classList.toggle('picked');
+      state.selectedFields = Object.keys(state.numericCols).filter(n=>
+        wrap.querySelector(`[data-field="${CSS.escape(n)}"]`).classList.contains('picked')
+      );
+      document.getElementById('fieldsNext').disabled = state.selectedFields.length===0;
+    });
+    div.dataset.field = name;
+    wrap.appendChild(div);
+  });
+  document.getElementById('fieldsNext').disabled = state.selectedFields.length===0;
+}
+function previewFieldBars(name){
+  const vals = state.numericCols[name] || [];
+  const max = Math.max(...vals.map(Math.abs),1);
+  return vals.slice(0,5).map(v=>`<div class="b" style="height:${Math.max(8,Math.abs(v)/max*100)}%"></div>`).join('');
+}
+document.getElementById('fieldsBack').addEventListener('click', ()=>{
+  goScreen(state.workbook && state.workbook.SheetNames.length > 1 ? 'sheet' : 'upload');
+});
+document.getElementById('fieldsNext').addEventListener('click', ()=>{
+  buildAxisCandidates();
+  renderAxisCards();
+  goScreen('axis');
+});
+
+function renderAxisCards(){
+  const wrap = document.getElementById('axisCards');
+  wrap.innerHTML = '';
+  state.axisCandidates.forEach((c, i)=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      ${c.recommended?'<span class="badge">추천</span>':''}
+      <div class="prev">${previewBars(c)}</div>
+      <h3>X축 ${c.xLabel} · Y축 ${c.yLabel}</h3>
+      <p>${c.reason}</p>`;
+    div.addEventListener('click', ()=>{
+      wrap.querySelectorAll('.card').forEach(el=>el.classList.remove('picked'));
+      div.classList.add('picked');
+      state.selectedAxis = c;
+      document.getElementById('axisNext').disabled = false;
+    });
+    wrap.appendChild(div);
+  });
+}
+function previewBars(c){
+  if(c.kind==='numeric-numeric') return `<span style="font-size:22px;">⟋</span>`;
+  const vals = state.numericCols[c.colName] || [];
+  const max = Math.max(...vals.map(Math.abs),1);
+  return vals.slice(0,5).map(v=>`<div class="b" style="height:${Math.max(8,Math.abs(v)/max*100)}%"></div>`).join('');
+}
+
+document.getElementById('axisBack').addEventListener('click', ()=>goScreen('fields'));
+document.getElementById('axisNext').addEventListener('click', ()=>{
+  buildTypeCandidates();
+  renderTypeCards();
+  goScreen('type');
+});
+
+/* ---------- 3. 그래프 종류 ---------- */
+function buildTypeCandidates(){
+  const a = state.selectedAxis;
+  if(a.kind==='numeric-numeric'){
+    state.typeCandidates = [
+      {id:'scatter', label:'분산형(스캐터)', recommended:true},
+      {id:'line', label:'선 그래프', recommended:false}
+    ];
+  } else if(a.pieHint){
+    state.typeCandidates = [
+      {id:'pie', label:'원형 그래프', recommended:true},
+      {id:'bar-v', label:'세로 막대', recommended:false},
+      {id:'bar-h', label:'가로 막대', recommended:false}
+    ];
+  } else {
+    state.typeCandidates = [
+      {id:'bar-v', label:'세로 막대', recommended:true},
+      {id:'bar-h', label:'가로 막대', recommended:false},
+      {id:'line', label:'선 그래프', recommended:false},
+      {id:'pie', label:'원형 그래프', recommended:false, disabled: state.categories.length>6}
+    ].filter(t=>!t.disabled);
+  }
+}
+function typePreviewHTML(id){
+  if(id==='bar-v') return `<div class="prev"><div class="b" style="height:60%"></div><div class="b" style="height:95%"></div><div class="b" style="height:40%"></div><div class="b" style="height:75%"></div></div>`;
+  if(id==='bar-h') return `<div style="display:flex;flex-direction:column;gap:4px;height:48px;justify-content:center;margin-bottom:10px;"><div style="width:60%;height:8px;background:var(--accent);border-radius:0 3px 3px 0;"></div><div style="width:95%;height:8px;background:var(--accent);border-radius:0 3px 3px 0;"></div><div style="width:40%;height:8px;background:var(--accent);border-radius:0 3px 3px 0;"></div></div>`;
+  if(id==='line') return `<svg viewBox="0 0 100 48" style="width:100%;height:48px;margin-bottom:10px;"><polyline points="4,40 30,28 56,32 82,10 96,6" fill="none" stroke="var(--accent)" stroke-width="3"/></svg>`;
+  if(id==='pie') return `<svg viewBox="0 0 48 48" style="width:48px;height:48px;margin:0 auto 10px;display:block;"><circle r="20" cx="24" cy="24" fill="var(--accent-tint)"/><path d="M24 24 L24 4 A20 20 0 0 1 42 32 Z" fill="var(--accent)"/></svg>`;
+  if(id==='scatter') return `<svg viewBox="0 0 100 48" style="width:100%;height:48px;margin-bottom:10px;"><circle cx="20" cy="14" r="3" fill="var(--coral)"/><circle cx="45" cy="30" r="3" fill="var(--coral)"/><circle cx="65" cy="36" r="3" fill="var(--coral)"/><circle cx="85" cy="40" r="3" fill="var(--coral)"/></svg>`;
+  return '';
+}
+function renderTypeCards(){
+  document.getElementById('typeSub').textContent =
+    `선택한 축 조합(X축 ${state.selectedAxis.xLabel} · Y축 ${state.selectedAxis.yLabel})에 맞춰 추천했어요. 필요하면 바꿀 수 있어요.`;
+  const wrap = document.getElementById('typeCards');
+  wrap.innerHTML = '';
+  state.typeCandidates.forEach(t=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `${t.recommended?'<span class="badge">추천</span>':''}${typePreviewHTML(t.id)}<h3>${t.label}</h3>`;
+    div.addEventListener('click', ()=>{
+      wrap.querySelectorAll('.card').forEach(el=>el.classList.remove('picked'));
+      div.classList.add('picked');
+      state.selectedType = t.id;
+      document.getElementById('typeNext').disabled = false;
+    });
+    wrap.appendChild(div);
+  });
+}
+document.getElementById('typeBack').addEventListener('click', ()=>goScreen('axis'));
+document.getElementById('typeNext').addEventListener('click', ()=>{
+  renderThemeCards();
+  goScreen('theme');
+});
+
+/* ---------- 4. 색감 테마 ---------- */
+const MONO_THEMES = [
+  {id:'blue', name:'클래식 블루', colors:['#378ADD','#85B7EB','#0C447C','#B5D4F4']},
+  {id:'coral', name:'웜 코랄', colors:['#D85A30','#F0997B','#993C1D','#F5C4B3']},
+  {id:'teal', name:'딥 틸', colors:['#0F6E56','#5DCAA5','#04342C','#9FE1CB']},
+  {id:'purple', name:'라벤더 퍼플', colors:['#7F77DD','#AFA9EC','#3C3489','#CECBF6']}
+];
+const MULTI_THEMES = [
+  {id:'vivid', name:'비비드 클래식', colors:['#378ADD','#D85A30','#EF9F27','#1D9E75']},
+  {id:'sunset', name:'선셋 팔레트', colors:['#D85A30','#D4537E','#EF9F27','#7F77DD']},
+  {id:'forest', name:'포레스트 & 어스', colors:['#639922','#1D9E75','#BA7517','#888780']},
+  {id:'contrast', name:'대비 강조', colors:['#7F77DD','#D85A30','#639922','#5F5E5A']}
+];
+
+/* 항목 개수가 테마 기본 색상 수보다 많아도 항목마다 다른 색을 쓰도록 확장 팔레트 생성 */
+function hexToHsl(hex){
+  const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h=0, s=0; const l = (max+min)/2;
+  if(max!==min){
+    const d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d+(g<b?6:0); break;
+      case g: h=(b-r)/d+2; break;
+      default: h=(r-g)/d+4;
+    }
+    h/=6;
+  }
+  return [h*360, s*100, l*100];
+}
+function hslToHex(h,s,l){
+  s/=100; l/=100;
+  const k = n => (n+h/30)%12;
+  const a = s*Math.min(l,1-l);
+  const f = n => l - a*Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n),1)));
+  const toHex = x => Math.round(255*x).toString(16).padStart(2,'0');
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+function buildPalette(baseColors, count){
+  const out = [];
+  for(let i=0;i<count;i++){
+    const base = baseColors[i % baseColors.length];
+    const round = Math.floor(i / baseColors.length);
+    if(round===0){ out.push(base); continue; }
+    const [h,s,l] = hexToHsl(base);
+    const dir = round%2===1 ? 1 : -1;
+    const step = Math.ceil(round/2) * 14;
+    const newL = Math.max(18, Math.min(84, l + dir*step));
+    out.push(hslToHex(h, s, newL));
+  }
+  return out;
+}
+function renderThemeCards(){
+  const buildGrid = (list, wrapId) => {
+    const wrap = document.getElementById(wrapId);
+    wrap.innerHTML = '';
+    list.forEach(theme=>{
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `<div class="swrow">${theme.colors.map(c=>`<span class="sw" style="background:${c}"></span>`).join('')}</div><h3>${theme.name}</h3>`;
+      div.addEventListener('click', ()=>{
+        document.querySelectorAll('#monoThemeCards .card, #multiThemeCards .card').forEach(el=>el.classList.remove('picked'));
+        div.classList.add('picked');
+        state.selectedTheme = theme;
+        document.getElementById('themeNext').disabled = false;
+      });
+      wrap.appendChild(div);
+    });
+  };
+  buildGrid(MONO_THEMES, 'monoThemeCards');
+  buildGrid(MULTI_THEMES, 'multiThemeCards');
+}
+document.getElementById('themeBack').addEventListener('click', ()=>goScreen('type'));
+document.getElementById('themeNext').addEventListener('click', ()=>{
+  renderFinal();
+  goScreen('final');
+});
+
+/* ---------- 5. 완성 ---------- */
+function chartJsTypeAndData(){
+  const a = state.selectedAxis, t = state.selectedType, colors = state.selectedTheme.colors;
+  if(a.kind==='numeric-numeric'){
+    const xs = state.numericCols[a.xCol], ys = state.numericCols[a.yCol];
+    const points = xs.map((x,i)=>({x, y:ys[i]}));
+    return {
+      type: t==='line' ? 'line' : 'scatter',
+      data:{ datasets:[{label:a.yLabel, data:points, backgroundColor:colors[0], borderColor:colors[0], showLine:t==='line'}] },
+      options:{ scales:{ x:{title:{display:true,text:a.xLabel}}, y:{title:{display:true,text:a.yLabel}} } }
+    };
+  }
+  const vals = state.numericCols[a.colName];
+  const cats = state.categories;
+  const palette = buildPalette(colors, cats.length);
+  if(t==='pie'){
+    return { type:'pie', data:{ labels:cats, datasets:[{data:vals, backgroundColor:palette}] }, options:{} };
+  }
+  const isHorizontal = t==='bar-h';
+  return {
+    type: t==='line' ? 'line' : 'bar',
+    data:{ labels:cats, datasets:[{ label:a.colName, data:vals, backgroundColor:palette, borderColor:colors[0] }] },
+    options:{ indexAxis: isHorizontal?'y':'x', plugins:{legend:{display:false}} }
+  };
+}
+
+function renderFinal(){
+  const cfg = chartJsTypeAndData();
+  const canvas = document.getElementById('finalChart');
+  if(state.chart) state.chart.destroy();
+  state.chart = new Chart(canvas, {type:cfg.type, data:cfg.data, options:Object.assign({responsive:true},cfg.options)});
+}
+
+document.getElementById('dlPng').addEventListener('click', ()=>{
+  const url = state.chart.toBase64Image();
+  const a = document.createElement('a'); a.href = url; a.download = 'chart.png'; a.click();
+});
+
+document.getElementById('dlPptx').addEventListener('click', ()=>{
+  const pptx = new PptxGenJS();
+  const slide = pptx.addSlide();
+  const a = state.selectedAxis, t = state.selectedType, colors = state.selectedTheme.colors.map(c=>c.replace('#',''));
+  slide.addText(`X축 ${a.xLabel} · Y축 ${a.yLabel}`, {x:0.5,y:0.3,fontSize:18,bold:true});
+
+  if(a.kind==='numeric-numeric'){
+    const xs = state.numericCols[a.xCol], ys = state.numericCols[a.yCol];
+    const dataChartAreaScatter = [
+      {name:a.xLabel, values:xs},
+      {name:a.yLabel, values:ys}
+    ];
+    slide.addChart(pptx.ChartType.scatter, dataChartAreaScatter, {x:0.5,y:1,w:9,h:5, chartColors:colors});
+  } else if(t==='pie'){
+    const vals = state.numericCols[a.colName];
+    const dataChartAreaPie = [{ name:a.colName, labels:state.categories, values:vals }];
+    const palette = buildPalette(state.selectedTheme.colors, state.categories.length).map(c=>c.replace('#',''));
+    slide.addChart(pptx.ChartType.pie, dataChartAreaPie, {x:0.5,y:1,w:9,h:5, chartColors:palette});
+  } else {
+    const vals = state.numericCols[a.colName];
+    const dataChartAreaBar = [{ name:a.colName, labels:state.categories, values:vals }];
+    const chartType = t==='line' ? pptx.ChartType.line : pptx.ChartType.bar;
+    const palette = buildPalette(state.selectedTheme.colors, state.categories.length).map(c=>c.replace('#',''));
+    slide.addChart(chartType, dataChartAreaBar, {x:0.5,y:1,w:9,h:5, barDir: t==='bar-h'?'bar':'col', chartColors:palette});
+  }
+  pptx.writeFile({fileName:'autochart.pptx'});
+});
+
+document.getElementById('finalRestart').addEventListener('click', ()=>{
+  fileInput.value='';
+  document.getElementById('uploadError').textContent='';
+  goScreen('upload');
+});
+</script>
+</body>
+</html>
