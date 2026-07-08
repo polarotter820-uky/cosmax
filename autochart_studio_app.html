@@ -111,6 +111,9 @@
   .labelcol-row select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
   .labelcol-row .hint{margin:8px 0 0;font-size:12.5px;color:var(--muted);}
 
+  .fields-bulk-row{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;}
+  .btn.small{padding:6px 12px;min-height:32px;font-size:13px;border-radius:8px;}
+
   .fieldcard .check{
     position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:5px;
     border:1.5px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;
@@ -282,6 +285,10 @@
       <label for="labelColSelect">항목(x축)으로 사용할 열</label>
       <select id="labelColSelect"></select>
       <p class="hint" id="labelColHint"></p>
+    </div>
+    <div class="fields-bulk-row">
+      <button type="button" class="btn small" id="fieldsSelectAll">전체 선택</button>
+      <button type="button" class="btn small" id="fieldsDeselectAll">전체 해제</button>
     </div>
     <div class="cardgrid" id="fieldCards"></div>
     <div class="btnrow"><button class="btn" id="fieldsBack">이전</button><button class="btn primary" id="fieldsNext" disabled>다음</button></div>
@@ -653,7 +660,16 @@ function buildAxisCandidates(){
       reason:`항목이 ${state.categories.length}개뿐이라 전체 대비 비중을 보기에도 좋아요`, recommended:false, pieHint:true
     });
   }
-  state.axisCandidates = candidates.slice(0,4);
+  /* 선택한 필드가 2개 이상이면, 한 그래프 안에서 여러 필드(예: 연도별 값)를 나란히 비교하는 축 조합도 추천 */
+  if(scales.length>=2){
+    const names = scales.map(s=>s.name);
+    candidates.push({
+      kind:'multi-series', xLabel:labelColumnName(), yLabel:'선택한 항목 비교', colNames:names,
+      reason:`선택한 ${names.length}개 항목(${names.join(', ')})을 한 그래프에서 나란히 비교해요`,
+      recommended: names.length>=3
+    });
+  }
+  state.axisCandidates = candidates.slice(0,5);
 }
 
 function renderFileInfo(){
@@ -691,6 +707,16 @@ function previewFieldBars(name){
   const max = Math.max(...vals.map(Math.abs),1);
   return vals.slice(0,5).map(v=>`<div class="b" style="height:${Math.max(8,Math.abs(v)/max*100)}%"></div>`).join('');
 }
+document.getElementById('fieldsSelectAll').addEventListener('click', ()=>{
+  document.querySelectorAll('#fieldCards .fieldcard').forEach(el=>el.classList.add('picked'));
+  state.selectedFields = Object.keys(state.numericCols);
+  document.getElementById('fieldsNext').disabled = state.selectedFields.length===0;
+});
+document.getElementById('fieldsDeselectAll').addEventListener('click', ()=>{
+  document.querySelectorAll('#fieldCards .fieldcard').forEach(el=>el.classList.remove('picked'));
+  state.selectedFields = [];
+  document.getElementById('fieldsNext').disabled = true;
+});
 document.getElementById('fieldsBack').addEventListener('click', ()=>{
   goScreen(state.workbook && state.workbook.SheetNames.length > 1 ? 'sheet' : 'upload');
 });
@@ -722,6 +748,10 @@ function renderAxisCards(){
 }
 function previewBars(c){
   if(c.kind==='numeric-numeric') return `<span style="font-size:22px;">⟋</span>`;
+  if(c.kind==='multi-series'){
+    const swatches = ['var(--accent)','var(--coral)','#8A8381','#0C447C','#EF9F27','#7F77DD'];
+    return `<div class="swrow">${c.colNames.slice(0,6).map((_,i)=>`<span class="sw" style="background:${swatches[i%swatches.length]}"></span>`).join('')}</div>`;
+  }
   const vals = state.numericCols[c.colName] || [];
   const max = Math.max(...vals.map(Math.abs),1);
   return vals.slice(0,5).map(v=>`<div class="b" style="height:${Math.max(8,Math.abs(v)/max*100)}%"></div>`).join('');
@@ -747,6 +777,12 @@ function buildTypeCandidates(){
       {id:'pie', label:'원형 그래프', recommended:true},
       {id:'bar-v', label:'세로 막대', recommended:false},
       {id:'bar-h', label:'가로 막대', recommended:false}
+    ];
+  } else if(a.kind==='multi-series'){
+    state.typeCandidates = [
+      {id:'bar-v', label:'세로 막대(묶음)', recommended:true},
+      {id:'bar-h', label:'가로 막대(묶음)', recommended:false},
+      {id:'line', label:'선 그래프(여러 선)', recommended:false}
     ];
   } else {
     state.typeCandidates = [
@@ -871,6 +907,28 @@ document.getElementById('themeNext').addEventListener('click', ()=>{
 /* ---------- 5. 완성 ---------- */
 function chartJsTypeAndData(){
   const a = state.selectedAxis, t = state.selectedType, colors = state.selectedTheme.colors;
+  if(a.kind==='multi-series'){
+    const cats = state.categories;
+    const palette = buildPalette(colors, a.colNames.length);
+    const isHorizontal = t==='bar-h';
+    const valueAxis = isHorizontal ? 'x' : 'y';
+    const categoryAxis = isHorizontal ? 'y' : 'x';
+    const datasets = a.colNames.map((name,i)=>({
+      label:name, data:state.numericCols[name], backgroundColor:palette[i], borderColor:palette[i], fill:false
+    }));
+    return {
+      type: t==='line' ? 'line' : 'bar',
+      data:{ labels:cats, datasets },
+      options:{
+        indexAxis: isHorizontal?'y':'x',
+        plugins:{legend:{display:true}},
+        scales:{
+          [valueAxis]:{ beginAtZero:true, grace:'20%', title:{display:true, text:a.yLabel} },
+          [categoryAxis]:{ title:{display:true, text:a.xLabel} }
+        }
+      }
+    };
+  }
   if(a.kind==='numeric-numeric'){
     const xs = state.numericCols[a.xCol], ys = state.numericCols[a.yCol];
     const points = xs.map((x,i)=>({x, y:ys[i]}));
@@ -947,6 +1005,13 @@ document.getElementById('dlPptx').addEventListener('click', ()=>{
       {name:a.yLabel, values:ys}
     ];
     slide.addChart(pptx.ChartType.scatter, dataChartAreaScatter, {x:0.5,y:1,w:9,h:5, chartColors:colors});
+  } else if(a.kind==='multi-series'){
+    const dataChartAreaMulti = a.colNames.map(name=>(
+      { name, labels:state.categories, values:state.numericCols[name] }
+    ));
+    const chartType = t==='line' ? pptx.ChartType.line : pptx.ChartType.bar;
+    const palette = buildPalette(state.selectedTheme.colors, a.colNames.length).map(c=>c.replace('#',''));
+    slide.addChart(chartType, dataChartAreaMulti, {x:0.5,y:1,w:9,h:5, barDir: t==='bar-h'?'bar':'col', chartColors:palette, showLegend:true});
   } else if(t==='pie'){
     const vals = state.numericCols[a.colName];
     const dataChartAreaPie = [{ name:a.colName, labels:state.categories, values:vals }];
